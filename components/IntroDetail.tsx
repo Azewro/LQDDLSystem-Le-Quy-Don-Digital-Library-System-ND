@@ -37,9 +37,10 @@ const IntroDetail: React.FC<IntroDetailProps> = ({ intro, allIntros, onNavigateD
             </div>
           </header>
 
+          {/* Fix: Use content_html instead of content to match the BookIntroduction interface definition */}
           <div 
             className="prose prose-slate max-w-none text-slate-600 text-lg leading-relaxed space-y-6"
-            dangerouslySetInnerHTML={{ __html: intro.content }}
+            dangerouslySetInnerHTML={{ __html: intro.content_html }}
           />
 
           {/* Related News Section */}

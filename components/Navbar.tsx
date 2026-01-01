@@ -12,12 +12,12 @@ interface NavbarProps {
   onNavigateNews: () => void;
   onNavigateDocs: () => void;
   onNavigateCategory: (cat: string) => void;
+  onNavigateStatic: (slug: string, title: string) => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
-  user, onLoginClick, onLogout, onNavigateHome, onNavigateIntro, onNavigateNews, onNavigateDocs, onNavigateCategory 
+  user, onLoginClick, onLogout, onNavigateHome, onNavigateIntro, onNavigateNews, onNavigateDocs, onNavigateCategory, onNavigateStatic
 }) => {
-  const [activeItem, setActiveItem] = useState('Trang chủ');
   const [showDocDropdown, setShowDocDropdown] = useState(false);
 
   const documentCategories = [
@@ -46,7 +46,7 @@ const Navbar: React.FC<NavbarProps> = ({
         <nav className="hidden lg:flex items-center h-full ml-8">
           <div className="flex items-center h-full">
             <div className="px-4 h-full flex items-center cursor-pointer group" onClick={onNavigateHome}>
-               <span className={`text-[13px] font-bold ${activeItem === 'Trang chủ' ? 'text-[#00a651]' : 'text-slate-700 hover:text-[#00a651]'}`}>Trang chủ</span>
+               <span className="text-[13px] font-bold text-slate-700 hover:text-[#00a651]">Trang chủ</span>
             </div>
 
             <div 
@@ -55,12 +55,12 @@ const Navbar: React.FC<NavbarProps> = ({
               onMouseLeave={() => setShowDocDropdown(false)}
             >
               <div className="flex items-center gap-1 cursor-pointer group" onClick={onNavigateDocs}>
-                <span className={`text-[13px] font-bold transition-all ${activeItem === 'Tài liệu' ? 'text-[#00a651]' : 'text-slate-700 hover:text-[#00a651]'}`}>Tài liệu</span>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showDocDropdown ? 'rotate-180 text-[#00a651]' : 'text-slate-400 group-hover:text-[#00a651]'}`} />
+                <span className="text-[13px] font-bold text-slate-700 hover:text-[#00a651]">Tài liệu</span>
+                <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-[#00a651]" />
               </div>
 
               {showDocDropdown && (
-                <div className="absolute top-full left-0 w-64 bg-white shadow-2xl border border-slate-100 rounded-b-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute top-full left-0 w-64 bg-white shadow-2xl border border-slate-100 rounded-b-2xl overflow-hidden">
                   <div className="py-2">
                     {documentCategories.map((cat, idx) => (
                       <div 
@@ -68,12 +68,8 @@ const Navbar: React.FC<NavbarProps> = ({
                         onClick={() => { onNavigateCategory(cat.label); setShowDocDropdown(false); }}
                         className="px-6 py-3 hover:bg-emerald-50 flex items-center gap-3 cursor-pointer transition-colors group/item"
                       >
-                        <div className="text-slate-400 group-hover/item:text-[#00a651] transition-colors">
-                          {cat.icon}
-                        </div>
-                        <span className="text-[13px] font-bold text-slate-600 group-hover/item:text-[#00a651] transition-colors">
-                          {cat.label}
-                        </span>
+                        <div className="text-slate-400 group-hover/item:text-[#00a651] transition-colors">{cat.icon}</div>
+                        <span className="text-[13px] font-bold text-slate-600 group-hover/item:text-[#00a651]">{cat.label}</span>
                       </div>
                     ))}
                   </div>
@@ -87,10 +83,10 @@ const Navbar: React.FC<NavbarProps> = ({
             <div className="px-4 h-full flex items-center cursor-pointer group" onClick={onNavigateNews}>
                <span className="text-[13px] font-bold text-slate-700 hover:text-[#00a651]">Tin tức</span>
             </div>
-            <div className="px-4 h-full flex items-center cursor-pointer group">
+            <div className="px-4 h-full flex items-center cursor-pointer group" onClick={() => onNavigateStatic('huong-dan', 'Hướng dẫn')}>
                <span className="text-[13px] font-bold text-slate-700 hover:text-[#00a651]">Hướng dẫn</span>
             </div>
-            <div className="px-4 h-full flex items-center cursor-pointer group">
+            <div className="px-4 h-full flex items-center cursor-pointer group" onClick={() => onNavigateStatic('gioi-thieu', 'Giới thiệu')}>
                <span className="text-[13px] font-bold text-slate-700 hover:text-[#00a651]">Giới thiệu</span>
             </div>
           </div>

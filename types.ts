@@ -13,9 +13,9 @@ export interface Book {
   title: string;
   author?: string;
   publisher?: string;
-  category: string; // Sách điện tử, Sách nói, Video...
-  subCategory?: string; // SGK, Tham khảo, Tâm lý...
-  grade?: number | string; // 6, 7, 8, 9
+  category: string;
+  subCategory?: string;
+  grade?: number | string;
   type: 'ebook' | 'audio' | 'video' | 'docx';
   coverImage: string;
   views: number;
@@ -32,7 +32,8 @@ export interface NewsItem {
   image: string;
   author: string;
   views: number;
-  content?: string;
+  content_html?: string;
+  gallery?: string[]; // Mảng các URL ảnh
 }
 
 export interface BookIntroduction {
@@ -42,16 +43,24 @@ export interface BookIntroduction {
   date: string;
   views: number;
   author: string;
-  content: string;
+  content_html: string;
   summary?: string;
+  gallery?: string[];
 }
 
-export interface AlbumItem {
+export interface StaticPage {
   id: string;
+  slug: string;
   title: string;
-  description: string;
-  image: string;
-  views: number;
+  content: string;
+  updated_at: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  icon_name: string;
+  parent_id?: string;
 }
 
 export interface ChatMessage {
