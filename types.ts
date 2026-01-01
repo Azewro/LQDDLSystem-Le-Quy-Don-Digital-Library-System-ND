@@ -1,11 +1,20 @@
 
-export type UserRole = 'guest' | 'student' | 'teacher';
+export type UserRole = 'admin' | 'student' | 'teacher';
 
 export interface User {
   id: string;
+  username: string;
   name: string;
   role: UserRole;
   avatar?: string;
+  phone?: string;
+  class_name?: string;
+  department?: string;
+  card_code?: string;
+  barcode?: string;
+  dob?: string;
+  gender?: string;
+  expiry_date?: string;
 }
 
 export interface Book {
@@ -33,7 +42,7 @@ export interface NewsItem {
   author: string;
   views: number;
   content_html?: string;
-  gallery?: string[]; // Mảng các URL ảnh
+  gallery?: string[];
 }
 
 export interface BookIntroduction {

@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
-import { Search, LogOut, ChevronDown, Tablet, Mic2, GraduationCap, MonitorPlay, LibraryBig, HeartPulse, Newspaper } from 'lucide-react';
+import { Search, LogOut, ChevronDown, Tablet, Mic2, GraduationCap, MonitorPlay, LibraryBig, HeartPulse, Newspaper, User as UserIcon } from 'lucide-react';
 import { User as UserType } from '../types';
 
 interface NavbarProps {
   user: UserType | null;
   onLoginClick: () => void;
   onLogout: () => void;
+  onProfileClick: () => void;
   onNavigateHome: () => void;
   onNavigateIntro: () => void;
   onNavigateNews: () => void;
@@ -16,7 +17,7 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
-  user, onLoginClick, onLogout, onNavigateHome, onNavigateIntro, onNavigateNews, onNavigateDocs, onNavigateCategory, onNavigateStatic
+  user, onLoginClick, onLogout, onProfileClick, onNavigateHome, onNavigateIntro, onNavigateNews, onNavigateDocs, onNavigateCategory, onNavigateStatic
 }) => {
   const [showDocDropdown, setShowDocDropdown] = useState(false);
 
@@ -95,7 +96,15 @@ const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-4">
           <Search className="w-5 h-5 text-slate-400 cursor-pointer" />
           {user ? (
-             <button onClick={onLogout} className="text-slate-400 hover:text-red-500"><LogOut className="w-5 h-5" /></button>
+             <div className="flex items-center gap-4">
+                <button onClick={onProfileClick} className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full hover:bg-white transition-all group">
+                   <div className="w-6 h-6 bg-[#00a651] rounded-full flex items-center justify-center text-white">
+                      <UserIcon className="w-3.5 h-3.5" />
+                   </div>
+                   <span className="text-[11px] font-black text-slate-700 uppercase max-w-[80px] truncate">{user.name.split(' ').pop()}</span>
+                </button>
+                <button onClick={onLogout} className="text-slate-400 hover:text-red-500 transition-colors"><LogOut className="w-5 h-5" /></button>
+             </div>
           ) : (
             <button onClick={onLoginClick} className="px-6 py-2 bg-[#00a651] text-white rounded-full text-[13px] font-bold">Đăng nhập</button>
           )}
