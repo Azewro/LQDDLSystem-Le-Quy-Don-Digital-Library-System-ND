@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Search, Plus, Printer, MoreHorizontal, Edit, Trash2, Filter, ChevronRight, Calendar, ChevronDown, Download, Upload, KeyRound, Maximize2, CheckCircle2, AlertCircle, FileSpreadsheet, ArrowLeft, Loader2, X, MoreVertical, ToggleLeft as ToggleIcon, ArrowUp, ArrowDown, ChevronsUpDown, User as UserIcon, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Printer, MoreHorizontal, Edit, Trash2, Filter, ChevronRight, Calendar, ChevronDown, Download, Upload, KeyRound, Maximize2, CheckCircle2, AlertCircle, FileSpreadsheet, ArrowLeft, Loader2, X, MoreVertical, ToggleLeft as ToggleIcon, ArrowUp, ArrowDown, ChevronsUpDown, User as UserIcon } from 'lucide-react';
 import { User } from '../types';
 import AddUserModal from './AddUserModal';
 import * as XLSX from 'xlsx';
@@ -169,7 +169,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onRefr
     else document.exitFullscreen();
   };
 
-  // --- IMPORT LOGIC ---
+  // --- IMPORT LOGIC CẬP NHẬT CHO MẪU ẢNH ---
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -182,12 +182,13 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onRefr
         const ws = wb.Sheets[wb.SheetNames[0]];
         const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
 
+        // Tìm dòng header (dòng chứa "Họ và tên")
         const headerRowIndex = data.findIndex(row => 
           row.some(cell => cell && cell.toString().includes("Họ và tên"))
         );
 
         if (headerRowIndex === -1) {
-          setLogs(prev => [{msg: "Không tìm thấy dòng tiêu đề trong file!", type: 'error'}, ...prev]);
+          setLogs(prev => [{msg: "Không tìm thấy cột 'Họ và tên' trong file!", type: 'error'}, ...prev]);
           setImporting(false);
           return;
         }
@@ -195,6 +196,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onRefr
         const headers = data[headerRowIndex].map(h => h?.toString() || "");
         const rows = data.slice(headerRowIndex + 1);
 
+        // Hàm tiện ích để lấy giá trị theo từ khóa header (không phân biệt hoa thường, chấp nhận dấu *)
         const getValue = (row: any[], keyword: string) => {
           const idx = headers.findIndex(h => h.toLowerCase().includes(keyword.toLowerCase()));
           return idx !== -1 ? row[idx] : "";
@@ -206,22 +208,22 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onRefr
           const role = rawDeptName ? 'teacher' : 'student';
 
           return {
-            barcode: getValue(row, "Mã vạch")?.toString() || "",
-            full_name: getValue(row, "Họ và tên")?.toString() || "",
-            class_or_dept: (rawClassName || rawDeptName)?.toString() || "",
+            barcode: getValue(row, "Mã vạch"),
+            full_name: getValue(row, "Họ và tên"),
+            class_or_dept: rawClassName || rawDeptName,
             dob: formatExcelDate(getValue(row, "Ngày sinh")),
-            gender: getValue(row, "Giới tính")?.toString() || "",
-            card_code: getValue(row, "Mã thẻ")?.toString() || "",
-            phone: getValue(row, "Số điện thoại")?.toString() || "",
+            gender: getValue(row, "Giới tính"),
+            card_code: getValue(row, "Mã thẻ"),
+            phone: getValue(row, "Số điện thoại"),
             role: role,
             expiry_date: formatExcelDate(getValue(row, "Ngày hết hạn")) || '31/05/2025'
           };
         });
 
         setPreviewData(mappedData);
-        setLogs(prev => [{msg: `Đã đọc ${mappedData.length} dòng dữ liệu`, type: 'success'}, ...prev]);
+        setLogs(prev => [{msg: `Đã đọc thành công ${mappedData.length} bản ghi`, type: 'success'}, ...prev]);
       } catch (err) { 
-        setLogs(prev => [{msg: "Lỗi file!", type: 'error'}, ...prev]); 
+        setLogs(prev => [{msg: "Lỗi xử lý file Excel!", type: 'error'}, ...prev]); 
       } finally { 
         setImporting(false); 
       }
@@ -230,7 +232,6 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onRefr
   };
 
   const saveImportToDatabase = async () => {
-    if (previewData.length === 0) return;
     setImporting(true);
     try {
       for (const p of previewData) {
@@ -253,139 +254,78 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onRefr
       onRefresh?.();
       setPreviewData([]);
       setViewMode('list');
-      alert("Đã lưu thành công dữ liệu vào hệ thống!");
-    } catch (err: any) { alert("Lỗi: " + err.message); } finally { setImporting(false); }
+      alert("Đã nhập khẩu dữ liệu thành công!");
+    } catch (err: any) { alert("Lỗi khi lưu: " + err.message); } finally { setImporting(false); }
   };
 
   if (viewMode === 'import') {
     return (
       <div className="flex flex-col h-full bg-[#f4f6f8]">
-        <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-30 shadow-sm">
+        <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => setViewMode('list')} className="p-2.5 hover:bg-slate-50 rounded-xl text-slate-400 border border-transparent hover:border-slate-100 transition-all">
+            <button onClick={() => setViewMode('list')} className="p-2 hover:bg-slate-50 rounded-xl text-slate-400">
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div>
-               <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Nhập liệu bạn đọc tập trung</h2>
-               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Hỗ trợ file Excel theo mẫu chuẩn của thư viện</p>
-            </div>
+            <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Nhập liệu bạn đọc từ Excel</h2>
           </div>
           {previewData.length > 0 && (
-             <button onClick={saveImportToDatabase} disabled={importing} className="bg-[#00a651] text-white px-10 py-3 rounded-2xl font-black text-[12px] uppercase shadow-xl shadow-emerald-500/20 flex items-center gap-3 hover:bg-emerald-700 transition-all active:scale-95">
-              {importing ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-              {importing ? "ĐANG LƯU DỮ LIỆU..." : "XÁC NHẬN NHẬP VÀO HỆ THỐNG"}
+             <button onClick={saveImportToDatabase} disabled={importing} className="bg-[#00a651] text-white px-8 py-2 rounded-xl font-black text-xs uppercase shadow-lg flex items-center gap-2">
+              {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              {importing ? "ĐANG LƯU..." : "XÁC NHẬN NHẬP KHẨU"}
             </button>
           )}
         </div>
-
-        <div className="flex-1 p-8 overflow-y-auto custom-scrollbar">
-          <div className="grid lg:grid-cols-12 gap-8 max-w-[1600px] mx-auto">
-             
-             {/* Cột trái: Chọn File */}
-             <div className="lg:col-span-3 space-y-6">
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm sticky top-0">
-                  <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
-                    <FileSpreadsheet className="w-5 h-5 text-emerald-500" /> Chọn file Excel
-                  </h3>
-                  <div className="relative border-2 border-dashed border-slate-200 rounded-3xl p-12 flex flex-col items-center justify-center bg-slate-50/50 hover:border-[#00a651] hover:bg-emerald-50/20 transition-all group">
+        <div className="flex-1 p-8 overflow-y-auto">
+          <div className="grid lg:grid-cols-12 gap-8 max-w-7xl mx-auto">
+             <div className="lg:col-span-4 space-y-6">
+                <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+                  <h3 className="text-[13px] font-black text-slate-800 uppercase mb-6">Chọn file dữ liệu</h3>
+                  <div className="relative border-2 border-dashed border-slate-200 rounded-3xl p-10 flex flex-col items-center justify-center bg-slate-50/50 hover:border-[#00a651] transition-all group">
                     <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
-                    <Upload className="w-12 h-12 text-slate-300 mb-4 group-hover:text-[#00a651] group-hover:-translate-y-1 transition-transform" />
-                    <p className="text-xs font-black text-slate-500 text-center uppercase tracking-tighter leading-relaxed">Tải lên file dữ liệu <br/><span className="text-[10px] opacity-60">Kéo thả vào đây</span></p>
+                    <Upload className="w-10 h-10 text-slate-300 mb-4 group-hover:text-[#00a651]" />
+                    <p className="text-sm font-bold text-slate-500">Kéo thả hoặc click để tải lên</p>
                   </div>
-                  
-                  {logs.length > 0 && (
-                    <div className="mt-8 space-y-3">
-                      {logs.map((log, i) => (
-                        <div key={i} className={`text-[11px] font-bold p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-left-2 ${log.type === 'error' ? 'bg-red-50 text-red-500 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
-                          {log.type === 'error' ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-                          {log.msg}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="mt-8 pt-8 border-t border-slate-100">
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Mẹo nhỏ:</p>
-                     <ul className="text-[11px] text-slate-500 space-y-2 italic leading-relaxed">
-                        <li>- Nên sử dụng file mẫu để tránh lỗi định dạng.</li>
-                        <li>- Ngày sinh nên để định dạng dd/mm/yyyy.</li>
-                        <li>- Cột có dấu (*) là thông tin bắt buộc.</li>
-                     </ul>
+                  <div className="mt-8 space-y-2">
+                    {logs.map((log, i) => (
+                      <div key={i} className={`text-[11px] font-bold p-3 rounded-xl flex items-center gap-2 ${log.type === 'error' ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-600'}`}>
+                        {log.msg}
+                      </div>
+                    ))}
                   </div>
                 </div>
              </div>
-
-             {/* Cột phải: Preview Chi tiết */}
-             <div className="lg:col-span-9 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col min-h-[600px]">
-                <div className="p-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
-                   <div className="flex items-center gap-3">
-                      <h3 className="text-[13px] font-black text-slate-800 uppercase tracking-tight">Dữ liệu sẽ nhập vào Database</h3>
-                      <span className="bg-[#00a651] text-white px-3 py-1 rounded-full text-[10px] font-black">{previewData.length} BẢN GHI</span>
-                   </div>
-                   <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
-                      <div className="w-2 h-2 bg-[#00a651] rounded-full"></div> Sẵn sàng nhập
-                   </div>
+             <div className="lg:col-span-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+                <div className="p-6 border-b border-slate-50 bg-slate-50/50">
+                   <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Bản xem trước dữ liệu ({previewData.length})</h3>
                 </div>
-
-                <div className="flex-1 overflow-auto custom-scrollbar relative">
-                   <table className="w-full text-xs min-w-[1200px]">
-                      <thead className="bg-white sticky top-0 z-10 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b">
-                        <tr>
-                           <th className="px-4 py-5 text-center border-r border-slate-50 w-24">Mã vạch</th>
-                           <th className="px-6 py-5 text-left border-r border-slate-50">Họ và tên</th>
-                           <th className="px-4 py-5 text-center border-r border-slate-50 w-24">Lớp/Phòng</th>
-                           <th className="px-4 py-5 text-center border-r border-slate-50 w-28">Ngày sinh</th>
-                           <th className="px-4 py-5 text-center border-r border-slate-50 w-20">Giới tính</th>
-                           <th className="px-4 py-5 text-center border-r border-slate-50 w-24">Mã thẻ</th>
-                           <th className="px-4 py-5 text-center border-r border-slate-50 w-32">Số điện thoại</th>
-                           <th className="px-4 py-5 text-center border-r border-slate-50 w-28">Ngày hết hạn</th>
-                           <th className="px-4 py-5 text-center w-20">Xóa</th>
+                <div className="flex-1 overflow-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-white sticky top-0 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b">
+                      <tr>
+                          <th className="px-6 py-4 text-left">Mã vạch</th>
+                          <th className="px-6 py-4 text-left">Họ và tên</th>
+                          <th className="px-6 py-4 text-left">Lớp/Phòng</th>
+                          <th className="px-6 py-4 text-center">Giới tính</th>
+                          <th className="px-6 py-4 text-left">Mã thẻ</th>
+                          <th className="px-6 py-4 text-center">Xóa</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {previewData.map((p, i) => (
+                        <tr key={i} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 text-slate-400">{p.barcode}</td>
+                            <td className="px-6 py-4 font-bold text-slate-700">{p.full_name}</td>
+                            <td className="px-6 py-4 text-slate-500">{p.class_or_dept}</td>
+                            <td className="px-6 py-4 text-center">{p.gender}</td>
+                            <td className="px-6 py-4 font-black text-[#00a651]">{p.card_code}</td>
+                            <td className="px-6 py-4 text-center">
+                              <button onClick={() => setPreviewData(prev => prev.filter((_, idx) => idx !== i))} className="text-red-300 hover:text-red-500 p-1"><X className="w-4 h-4" /></button>
+                            </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        {previewData.map((p, i) => {
-                          const isInvalid = !p.full_name || !p.card_code;
-                          return (
-                            <tr key={i} className={`hover:bg-slate-50/80 transition-colors ${isInvalid ? 'bg-red-50/30' : ''}`}>
-                               <td className="px-4 py-4 text-center text-slate-400 font-mono">{p.barcode || '-'}</td>
-                               <td className="px-6 py-4 font-black text-slate-700">
-                                  <div className="flex items-center gap-2">
-                                     {p.full_name}
-                                     {!p.full_name && <AlertTriangle className="w-4 h-4 text-red-500" />}
-                                  </div>
-                               </td>
-                               <td className="px-4 py-4 text-center font-bold text-slate-500">{p.class_or_dept}</td>
-                               <td className="px-4 py-4 text-center text-slate-500">{p.dob}</td>
-                               <td className="px-4 py-4 text-center font-bold text-slate-400">{p.gender}</td>
-                               <td className="px-4 py-4 text-center font-black text-[#00a651]">{p.card_code}</td>
-                               <td className="px-4 py-4 text-center text-slate-500">{p.phone || '-'}</td>
-                               <td className="px-4 py-4 text-center text-red-400 font-bold">{p.expiry_date}</td>
-                               <td className="px-4 py-4 text-center">
-                                  <button onClick={() => setPreviewData(prev => prev.filter((_, idx) => idx !== i))} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><X className="w-4 h-4" /></button>
-                               </td>
-                            </tr>
-                          );
-                        })}
-                        {previewData.length === 0 && (
-                          <tr>
-                             <td colSpan={9} className="py-40 text-center">
-                                <FileSpreadsheet className="w-16 h-16 text-slate-100 mx-auto mb-4" />
-                                <p className="text-sm font-bold text-slate-300 italic">Vui lòng tải file để xem trước nội dung</p>
-                             </td>
-                          </tr>
-                        )}
-                      </tbody>
-                   </table>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                
-                {previewData.length > 0 && (
-                   <div className="p-6 bg-emerald-50/50 border-t border-emerald-100 flex items-center justify-between">
-                      <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-                         <CheckCircle2 className="w-4 h-4" /> Dữ liệu đã sẵn sàng để nhập vào hệ thống quản lý.
-                      </p>
-                      <button onClick={() => setPreviewData([])} className="text-[10px] font-black text-red-400 uppercase hover:text-red-600 transition-colors">Hủy toàn bộ</button>
-                   </div>
-                )}
              </div>
           </div>
         </div>
@@ -423,7 +363,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onRefr
             <MoreHorizontal className="w-4 h-4" />
           </button>
           {showMoreMenu && (
-            <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-100 rounded-xl shadow-2xl z-[100] py-2 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-slate-200">
+            <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-100 rounded-xl shadow-2xl z-[100] py-2 animate-in fade-in zoom-in-95 duration-150">
                <button onClick={handleDeleteSelected} className="w-full flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-slate-600 hover:bg-emerald-50 hover:text-[#00a651]"><Trash2 className="w-5 h-5 text-emerald-500" /> Xóa hàng loạt</button>
                <button onClick={() => {setViewMode('import'); setShowMoreMenu(false);}} className="w-full flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-slate-600 hover:bg-emerald-50 hover:text-[#00a651]"><Download className="w-5 h-5 text-emerald-500" /> Nhập khẩu từ Excel</button>
                <button onClick={handleExportExcel} className="w-full flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-slate-600 hover:bg-emerald-50 hover:text-[#00a651]"><Upload className="w-5 h-5 text-emerald-500" /> Xuất khẩu Excel</button>
