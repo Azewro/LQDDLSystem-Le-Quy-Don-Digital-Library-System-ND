@@ -33,26 +33,22 @@ const Footer: React.FC<FooterProps> = ({ onNavigateHome, onNavigateIntro, onNavi
 
             <div className="space-y-3 text-[13px] text-slate-300">
               <p className="flex items-start gap-2">
-                <Mail className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <span>Email: c2lequydon@tayho.edu.vn</span>
-              </p>
-              <p className="flex items-start gap-2">
                 <Phone className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <span>Điện thoại: 024 3829 1010</span>
+                <span>Điện thoại: 024 3836 0674</span>
               </p>
               <p className="flex items-start gap-2">
                 <Globe className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <span>Website: thcslequydon.thuvien.edu.vn</span>
+                <span>Website: thcslequydon.caugiay.edu.vn</span>
               </p>
               <p className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <span>Địa chỉ: Số 2 Phố Lê Quý Đôn, Quận Tây Hồ, Hà Nội</span>
+                <span>Địa chỉ: 58 Đ. Nguyễn Văn Huyên, Nghĩa Đô, Cầu Giấy, Hà Nội</span>
               </p>
             </div>
 
             <div className="bg-white p-2 w-32 h-32 rounded-lg shadow-lg">
               <img
-                src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://thcslequydon-tayho.edu.vn"
+                src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://thcslequydon.caugiay.edu.vn"
                 alt="QR Code"
                 className="w-full h-full"
               />
