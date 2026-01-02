@@ -23,6 +23,9 @@ import BookSection from '@/components/features/books/BookSection';
 import CategorySection from '@/components/features/books/CategorySection';
 import DocumentOverview from '@/components/features/books/DocumentOverview';
 import CategoryDetailView from '@/components/features/books/CategoryDetailView';
+import EBookListView from '@/components/features/books/EBookListView';
+import EBookDetailView from '@/components/features/books/EBookDetailView';
+import EBookReaderView from '@/components/features/books/EBookReaderView';
 
 // Feature components - News
 import NewsList from '@/components/features/news/NewsList';
@@ -40,13 +43,14 @@ import AdminDashboard from '@/components/features/admin/AdminDashboard';
 import AdminUserManagement from '@/components/features/admin/AdminUserManagement';
 import AdminArticleManagement from '@/components/features/admin/AdminArticleManagement';
 import AdminPageManagement from '@/components/features/admin/AdminPageManagement';
+import AdminEBookManagement from '@/components/features/admin/AdminEBookManagement';
 
 import { Book } from '@/types';
 import { Loader2, Settings } from 'lucide-react';
 
 const AppContent: React.FC = () => {
     const { user, setUser, showLogin, setShowLogin, showProfile, setShowProfile, mustChangePassword, handleLoginSuccess, handleLogout } = useAuth();
-    const { books, news, intros, allUsers, sitePages, loading, fetchData } = useData();
+    const { books, news, intros, allUsers, sitePages, ebooks, ebookFolders, loading, fetchData } = useData();
     const nav = useNavigation();
 
     useEffect(() => {
@@ -112,6 +116,7 @@ const AppContent: React.FC = () => {
                                 {nav.adminSubView === 'admin-introductions' && <AdminArticleManagement type="introduction" items={intros} onRefresh={fetchData} />}
                                 {nav.adminSubView === 'admin-news' && <AdminArticleManagement type="news" items={news} onRefresh={fetchData} />}
                                 {nav.adminSubView === 'admin-pages' && <AdminPageManagement pages={sitePages} onRefresh={fetchData} />}
+                                {nav.adminSubView === 'admin-ebooks' && <AdminEBookManagement ebooks={ebooks} folders={ebookFolders} onRefresh={fetchData} />}
                                 {nav.adminSubView === 'books' && <div className="p-20 text-center opacity-30 font-black italic">QUẢN LÝ KHO TÀI LIỆU (ĐANG PHÁT TRIỂN)</div>}
                                 {nav.adminSubView === 'settings' && <div className="p-20 text-center opacity-30 font-black italic">CẤU HÌNH HỆ THỐNG (ĐANG PHÁT TRIỂN)</div>}
                             </main>
@@ -132,12 +137,13 @@ const AppContent: React.FC = () => {
                         onNavigateDocs={nav.navigateToDocOverview}
                         onNavigateCategory={nav.navigateToCategory}
                         onNavigateStatic={nav.navigateToStaticPage}
+                        onEBookClick={nav.navigateToEBookList}
                     />
                     <main className="flex-1">
                         {nav.currentView === 'home' && (
                             <>
                                 <BannerSlider />
-                                <CategorySection onCategoryClick={nav.navigateToCategory} />
+                                <CategorySection onCategoryClick={nav.navigateToCategory} onEBookClick={nav.navigateToEBookList} />
                                 <div className="max-w-[1440px] mx-auto px-6 space-y-12 pb-16">
                                     <BookSection title="Sách mới cập nhật" books={books.slice(0, 5)} onBookClick={handleBookClick} />
                                     <div className="grid lg:grid-cols-2 gap-8">
@@ -187,8 +193,11 @@ const AppContent: React.FC = () => {
                         {nav.currentView === 'intro-detail' && nav.selectedIntro && <IntroDetail intro={nav.selectedIntro} allIntros={intros} onNavigateDetail={nav.navigateToIntroDetail} onNavigateList={nav.navigateToIntroList} onNavigateHome={nav.navigateToHome} />}
                         {nav.currentView === 'news-list' && <NewsList newsList={news} onSelectNews={nav.navigateToNewsDetail} onBack={nav.navigateToHome} />}
                         {nav.currentView === 'news-detail' && nav.selectedNews && <NewsDetail news={nav.selectedNews} allNews={news} onNavigateDetail={nav.navigateToNewsDetail} onNavigateList={nav.navigateToIntroList} onNavigateHome={nav.navigateToHome} />}
+                        {nav.currentView === 'ebook-list' && <EBookListView ebooks={ebooks} folders={ebookFolders} onBookClick={nav.navigateToEBookDetail} onNavigateHome={nav.navigateToHome} onNavigateOverview={nav.navigateToDocOverview} />}
+                        {nav.currentView === 'ebook-detail' && nav.selectedEBook && <EBookDetailView book={nav.selectedEBook} onBack={nav.navigateToEBookList} onRead={nav.navigateToEBookReader} />}
+                        {nav.currentView === 'ebook-reader' && nav.selectedEBook && <EBookReaderView book={nav.selectedEBook} onBack={() => nav.navigateToEBookDetail(nav.selectedEBook!)} />}
                     </main>
-                    <Footer onNavigateHome={nav.navigateToHome} onNavigateIntro={nav.navigateToIntroList} onNavigateNews={nav.navigateToNewsList} />
+                    <Footer onNavigateHome={nav.navigateToHome} onNavigateIntro={nav.navigateToIntroList} onNavigateNews={nav.navigateToNewsList} onEBookClick={nav.navigateToEBookList} />
                 </>
             )}
 

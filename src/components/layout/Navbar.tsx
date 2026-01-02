@@ -14,10 +14,11 @@ interface NavbarProps {
   onNavigateDocs: () => void;
   onNavigateCategory: (cat: string) => void;
   onNavigateStatic: (slug: string, title: string) => void;
+  onEBookClick?: () => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({
-  user, onLoginClick, onLogout, onProfileClick, onNavigateHome, onNavigateIntro, onNavigateNews, onNavigateDocs, onNavigateCategory, onNavigateStatic
+  user, onLoginClick, onLogout, onProfileClick, onNavigateHome, onNavigateIntro, onNavigateNews, onNavigateDocs, onNavigateCategory, onNavigateStatic, onEBookClick
 }) => {
   const [showDocDropdown, setShowDocDropdown] = useState(false);
 
@@ -66,7 +67,14 @@ const Navbar: React.FC<NavbarProps> = ({
                     {documentCategories.map((cat, idx) => (
                       <div
                         key={idx}
-                        onClick={() => { onNavigateCategory(cat.label); setShowDocDropdown(false); }}
+                        onClick={() => {
+                          if (cat.label === 'Sách điện tử' && onEBookClick) {
+                            onEBookClick();
+                          } else {
+                            onNavigateCategory(cat.label);
+                          }
+                          setShowDocDropdown(false);
+                        }}
                         className="px-6 py-3 hover:bg-emerald-50 flex items-center gap-3 cursor-pointer transition-colors group/item"
                       >
                         <div className="text-slate-400 group-hover/item:text-[#00a651] transition-colors">{cat.icon}</div>

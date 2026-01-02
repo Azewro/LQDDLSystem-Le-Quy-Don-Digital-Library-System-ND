@@ -8,6 +8,18 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
       host: '0.0.0.0',
+      proxy: {
+        '/drive-proxy': {
+          target: 'https://www.googleapis.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/drive-proxy/, ''),
+        },
+        '/drive-uc-proxy': {
+          target: 'https://drive.google.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/drive-uc-proxy/, ''),
+        },
+      }
     },
     plugins: [react()],
     define: {

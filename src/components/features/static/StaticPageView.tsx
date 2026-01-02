@@ -18,10 +18,23 @@ const StaticPageView: React.FC<StaticPageViewProps> = ({ page, onBack }) => {
       </nav>
 
       <article className="bg-white rounded-[2.5rem] p-12 border border-slate-100 shadow-sm">
+        {page.image_url && (
+          <div className="w-full h-[400px] mb-12 rounded-[2rem] overflow-hidden shadow-2xl shadow-emerald-900/10">
+            <img src={page.image_url} alt={page.title} className="w-full h-full object-cover" />
+          </div>
+        )}
+
         <header className="mb-12 pb-8 border-b border-slate-50">
           <h1 className="text-4xl font-black text-slate-800 leading-tight mb-6 uppercase tracking-tight">
             {page.title}
           </h1>
+
+          {page.summary && (
+            <p className="text-xl font-bold text-slate-400 italic mb-8 border-l-4 border-emerald-500 pl-6 leading-relaxed">
+              {page.summary}
+            </p>
+          )}
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
               <span className="flex items-center gap-2">
@@ -41,7 +54,12 @@ const StaticPageView: React.FC<StaticPageViewProps> = ({ page, onBack }) => {
         </header>
 
         <div
-          className="prose prose-slate prose-lg max-w-none text-slate-600 leading-relaxed space-y-8"
+          className="prose prose-slate prose-lg max-w-none 
+          prose-headings:font-black prose-headings:text-slate-800
+          prose-p:text-slate-600 prose-p:leading-relaxed
+          prose-strong:text-slate-800 prose-strong:font-bold
+          prose-img:rounded-3xl prose-img:shadow-xl prose-img:border-4 prose-img:border-white
+          "
           dangerouslySetInnerHTML={{ __html: page.content }}
         />
 

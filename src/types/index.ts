@@ -67,6 +67,8 @@ export interface StaticPage {
   slug: string;
   title: string;
   content: string;
+  image_url?: string;
+  summary?: string;
   updated_at: string;
 }
 
@@ -80,4 +82,31 @@ export interface Category {
 export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
+}
+
+export interface EBookFolder {
+  id: string;
+  name: string;
+  parent_id?: string;
+  display_order: number;
+  created_at?: string;
+}
+
+export interface EBook {
+  id: string;
+  title: string;
+  author?: string;
+  publisher?: string;
+  publication_year?: number;
+  cover_url?: string;
+  drive_file_id: string;
+  storage_path?: string | null;
+  description?: string;
+  grade: string;
+  folder_id?: string;
+  views: number;
+  favorites: number;
+  page_count?: number;
+  created_at?: string;
+  updated_at?: string;
 }

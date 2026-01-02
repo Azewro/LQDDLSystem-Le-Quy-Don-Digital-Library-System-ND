@@ -92,3 +92,38 @@ export const getPublicUrl = (bucket: BucketName, path: string): string => {
     const { data } = supabase.storage.from(bucket).getPublicUrl(path);
     return data.publicUrl;
 };
+
+/**
+ * List files in a bucket
+ * @param bucket - Bucket name
+ * @param folder - Folder path (optional)
+ * @returns List of file objects with names and public URLs
+ */
+export const listFiles = async (
+    bucket: BucketName,
+    folder: string = ''
+): Promise<{ name: string; url: string; created_at: string }[]> => {
+    try {
+        const { data, error } = await supabase.storage
+            .from(bucket)
+            .list(folder, {
+                limit: 100,
+                offset: 0,
+                sortBy: { column: 'created_at', order: 'desc' },
+            });
+
+        if (error) {
+            console.error('List error:', error);
+            return [];
+        }
+
+        return data.map(file => ({
+            name: file.name,
+            url: getPublicUrl(bucket, folder ? `${folder}/${file.name}` : file.name),
+            created_at: file.created_at
+        }));
+    } catch (err) {
+        console.error('List exception:', err);
+        return [];
+    }
+};

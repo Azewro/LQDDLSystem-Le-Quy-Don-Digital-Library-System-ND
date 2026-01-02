@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { User, Book, NewsItem, BookIntroduction, StaticPage } from '@/types';
+import { User, Book, NewsItem, BookIntroduction, StaticPage, EBook, EBookFolder } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { BOOKS as MOCK_BOOKS } from '@/data/mockData';
 
@@ -9,6 +9,8 @@ interface DataContextType {
     intros: BookIntroduction[];
     allUsers: User[];
     sitePages: StaticPage[];
+    ebooks: EBook[];
+    ebookFolders: EBookFolder[];
     loading: boolean;
     fetchData: () => Promise<void>;
 }
@@ -21,6 +23,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [intros, setIntros] = useState<BookIntroduction[]>([]);
     const [allUsers, setAllUsers] = useState<User[]>([]);
     const [sitePages, setSitePages] = useState<StaticPage[]>([]);
+    const [ebooks, setEbooks] = useState<EBook[]>([]);
+    const [ebookFolders, setEbookFolders] = useState<EBookFolder[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchData = useCallback(async () => {
@@ -48,12 +52,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 { data: newsData },
                 { data: introData },
                 usersData,
-                { data: pagesData }
+                { data: pagesData },
+                { data: ebooksData },
+                { data: foldersData }
             ] = await Promise.all([
                 supabase.from('news').select('*').order('created_at', { ascending: false }),
                 supabase.from('book_introductions').select('*').order('created_at', { ascending: false }),
                 fetchAllUsersList(),
-                supabase.from('site_pages').select('*')
+                supabase.from('site_pages').select('*'),
+                supabase.from('ebooks').select('*').order('created_at', { ascending: false }),
+                supabase.from('ebook_folders').select('*').order('display_order', { ascending: true })
             ]);
 
             if (newsData) setNews(newsData.map(n => ({
@@ -96,7 +104,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 is_librarian: u.is_librarian,
                 avatar_url: u.avatar_url
             })));
-            if (pagesData) setSitePages(pagesData);
+            if (pagesData) setSitePages(pagesData.map(p => ({
+                id: p.id,
+                slug: p.slug,
+                title: p.title,
+                content: p.content,
+                image_url: p.image_url,
+                summary: p.summary,
+                updated_at: p.updated_at
+            })));
+            if (ebooksData) setEbooks(ebooksData);
+            if (foldersData) setEbookFolders(foldersData);
         } catch (error) {
             console.error(error);
         } finally {
@@ -105,7 +123,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     return (
-        <DataContext.Provider value={{ books, news, intros, allUsers, sitePages, loading, fetchData }}>
+        <DataContext.Provider value={{ books, news, intros, allUsers, sitePages, ebooks, ebookFolders, loading, fetchData }}>
             {children}
         </DataContext.Provider>
     );

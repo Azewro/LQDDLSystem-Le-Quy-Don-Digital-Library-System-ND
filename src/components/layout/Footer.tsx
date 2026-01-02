@@ -6,9 +6,10 @@ interface FooterProps {
   onNavigateHome: () => void;
   onNavigateIntro: () => void;
   onNavigateNews: () => void;
+  onEBookClick?: () => void;
 }
 
-const Footer: React.FC<FooterProps> = ({ onNavigateHome, onNavigateIntro, onNavigateNews }) => {
+const Footer: React.FC<FooterProps> = ({ onNavigateHome, onNavigateIntro, onNavigateNews, onEBookClick }) => {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -65,7 +66,7 @@ const Footer: React.FC<FooterProps> = ({ onNavigateHome, onNavigateIntro, onNavi
               <span className="absolute -bottom-2 left-0 w-8 h-1 bg-emerald-500 rounded-full"></span>
             </h3>
             <ul className="space-y-4 text-[13px] text-slate-400 font-medium">
-              <li className="hover:text-emerald-400 cursor-pointer transition-colors">Sách điện tử</li>
+              <li onClick={onEBookClick} className="hover:text-emerald-400 cursor-pointer transition-colors">Sách điện tử</li>
               <li className="hover:text-emerald-400 cursor-pointer transition-colors">Sách nói</li>
               <li className="hover:text-emerald-400 cursor-pointer transition-colors">Bài giảng điện tử</li>
               <li className="hover:text-emerald-400 cursor-pointer transition-colors">Album</li>

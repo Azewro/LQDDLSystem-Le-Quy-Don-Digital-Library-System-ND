@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { LayoutDashboard, Users, BookOpen, Newspaper, Settings, ChevronRight, ChevronDown, FileText, BookMarked } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Newspaper, Settings, ChevronRight, ChevronDown, FileText, BookMarked, Tablet, Mic2, Video, Image } from 'lucide-react';
 
 interface AdminSidebarProps {
   activeMenu: string;
@@ -10,13 +9,15 @@ interface AdminSidebarProps {
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeMenu, isCollapsed, onMenuClick }) => {
   const [isNewsOpen, setIsNewsOpen] = useState(false);
+  const [isBooksOpen, setIsBooksOpen] = useState(true);
 
   const menuItems = [
     { id: 'dashboard', label: 'Bảng điều khiển', icon: <LayoutDashboard className="w-5 h-5" /> },
     { id: 'users', label: 'Quản lý bạn đọc', icon: <Users className="w-5 h-5" /> },
-    { id: 'books', label: 'Kho tài liệu', icon: <BookOpen className="w-5 h-5" /> },
-    { id: 'admin-pages', label: 'Trang tĩnh', icon: <FileText className="w-5 h-5" /> },
   ];
+
+  // Check if any books submenu is active
+  const isBooksActive = activeMenu === 'books' || activeMenu === 'admin-ebooks' || activeMenu === 'admin-audiobooks' || activeMenu === 'admin-videos';
 
   return (
     <aside
@@ -51,6 +52,81 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeMenu, isCollapsed, on
             </button>
           ))}
 
+          {/* Kho tài liệu với Dropdown */}
+          <div className="space-y-1">
+            <button
+              onClick={() => {
+                if (isCollapsed) {
+                  onMenuClick?.('books');
+                } else {
+                  setIsBooksOpen(!isBooksOpen);
+                }
+              }}
+              className={`w-full flex items-center px-4 py-3.5 rounded-2xl transition-all group relative ${isBooksActive
+                ? 'bg-[#00a651] text-white shadow-lg shadow-emerald-500/20'
+                : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                } ${isCollapsed ? 'justify-center px-0' : 'justify-between'}`}
+            >
+              <div className={`flex items-center gap-4 ${isCollapsed ? 'gap-0' : ''}`}>
+                <div className={`${isBooksActive ? 'text-white' : 'text-slate-500 group-hover:text-emerald-400'} transition-colors`}>
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                {!isCollapsed && (
+                  <span className="text-[13px] font-bold tracking-tight whitespace-nowrap">
+                    Kho tài liệu
+                  </span>
+                )}
+              </div>
+              {!isCollapsed && (
+                isBooksOpen ? <ChevronDown className="w-4 h-4 opacity-40" /> : <ChevronRight className="w-4 h-4 opacity-40" />
+              )}
+            </button>
+
+            {isBooksOpen && !isCollapsed && (
+              <div className="pl-12 pr-4 py-2 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                <button
+                  onClick={() => onMenuClick?.('admin-ebooks')}
+                  className={`w-full text-left py-2 text-[12px] font-bold transition-colors flex items-center gap-2 ${activeMenu === 'admin-ebooks' ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-400'}`}
+                >
+                  <Tablet className="w-3.5 h-3.5" /> Sách điện tử
+                </button>
+                <button
+                  onClick={() => onMenuClick?.('admin-audiobooks')}
+                  className={`w-full text-left py-2 text-[12px] font-bold transition-colors flex items-center gap-2 ${activeMenu === 'admin-audiobooks' ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-400'}`}
+                >
+                  <Mic2 className="w-3.5 h-3.5" /> Sách nói
+                </button>
+                <button
+                  onClick={() => onMenuClick?.('admin-videos')}
+                  className={`w-full text-left py-2 text-[12px] font-bold transition-colors flex items-center gap-2 ${activeMenu === 'admin-videos' ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-400'}`}
+                >
+                  <Video className="w-3.5 h-3.5" /> Video / Bài giảng
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Trang tĩnh */}
+          <button
+            onClick={() => onMenuClick?.('admin-pages')}
+            className={`w-full flex items-center px-4 py-3.5 rounded-2xl transition-all group relative ${activeMenu === 'admin-pages'
+              ? 'bg-[#00a651] text-white shadow-lg shadow-emerald-500/20'
+              : 'text-slate-400 hover:bg-white/5 hover:text-white'
+              } ${isCollapsed ? 'justify-center px-0' : 'justify-between'}`}
+          >
+            <div className={`flex items-center gap-4 ${isCollapsed ? 'gap-0' : ''}`}>
+              <div className={`${activeMenu === 'admin-pages' ? 'text-white' : 'text-slate-500 group-hover:text-emerald-400'} transition-colors`}>
+                <FileText className="w-5 h-5" />
+              </div>
+              {!isCollapsed && (
+                <span className="text-[13px] font-bold tracking-tight whitespace-nowrap">
+                  Trang tĩnh
+                </span>
+              )}
+            </div>
+            {!isCollapsed && <ChevronRight className={`w-4 h-4 opacity-0 group-hover:opacity-40 ${activeMenu === 'admin-pages' ? 'hidden' : ''}`} />}
+          </button>
+
           {/* Tin tức & Bài viết với Dropdown */}
           <div className="space-y-1">
             <button
@@ -61,13 +137,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeMenu, isCollapsed, on
                   setIsNewsOpen(!isNewsOpen);
                 }
               }}
-              className={`w-full flex items-center px-4 py-3.5 rounded-2xl transition-all group relative ${activeMenu.startsWith('news') || activeMenu.startsWith('intro')
+              className={`w-full flex items-center px-4 py-3.5 rounded-2xl transition-all group relative ${activeMenu.startsWith('news') || activeMenu.startsWith('intro') || activeMenu === 'admin-introductions' || activeMenu === 'admin-news'
                 ? 'bg-[#00a651] text-white shadow-lg shadow-emerald-500/20'
                 : 'text-slate-400 hover:bg-white/5 hover:text-white'
                 } ${isCollapsed ? 'justify-center px-0' : 'justify-between'}`}
             >
               <div className={`flex items-center gap-4 ${isCollapsed ? 'gap-0' : ''}`}>
-                <div className={`${activeMenu.startsWith('news') ? 'text-white' : 'text-slate-500 group-hover:text-emerald-400'} transition-colors`}>
+                <div className={`${activeMenu.startsWith('news') || activeMenu === 'admin-introductions' || activeMenu === 'admin-news' ? 'text-white' : 'text-slate-500 group-hover:text-emerald-400'} transition-colors`}>
                   <Newspaper className="w-5 h-5" />
                 </div>
                 {!isCollapsed && (
@@ -85,13 +161,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeMenu, isCollapsed, on
               <div className="pl-12 pr-4 py-2 space-y-1 animate-in slide-in-from-top-2 duration-200">
                 <button
                   onClick={() => onMenuClick?.('admin-introductions')}
-                  className={`w-full text-left py-2 text-[12px] font-bold transition-colors flex items-center gap-2 ${activeMenu === 'admin-introductions' ? 'text-white' : 'text-slate-500 hover:text-emerald-400'}`}
+                  className={`w-full text-left py-2 text-[12px] font-bold transition-colors flex items-center gap-2 ${activeMenu === 'admin-introductions' ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-400'}`}
                 >
                   <BookMarked className="w-3.5 h-3.5" /> Giới thiệu sách
                 </button>
                 <button
                   onClick={() => onMenuClick?.('admin-news')}
-                  className={`w-full text-left py-2 text-[12px] font-bold transition-colors flex items-center gap-2 ${activeMenu === 'admin-news' ? 'text-white' : 'text-slate-500 hover:text-emerald-400'}`}
+                  className={`w-full text-left py-2 text-[12px] font-bold transition-colors flex items-center gap-2 ${activeMenu === 'admin-news' ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-400'}`}
                 >
                   <FileText className="w-3.5 h-3.5" /> Tin tức
                 </button>
