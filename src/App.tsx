@@ -145,7 +145,6 @@ const AppContent: React.FC = () => {
                                 <BannerSlider />
                                 <CategorySection onCategoryClick={nav.navigateToCategory} onEBookClick={nav.navigateToEBookList} />
                                 <div className="max-w-[1440px] mx-auto px-6 space-y-12 pb-16">
-                                    <BookSection title="Sách mới cập nhật" books={books.slice(0, 5)} onBookClick={handleBookClick} />
                                     <div className="grid lg:grid-cols-2 gap-8">
                                         <section className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
                                             <div className="flex items-center justify-between mb-8">
@@ -183,6 +182,65 @@ const AppContent: React.FC = () => {
                                             </div>
                                         </section>
                                     </div>
+
+                                    {/* Real Data Section: Sách điện tử */}
+                                    <BookSection
+                                        title="Sách điện tử mới"
+                                        books={ebooks.slice(0, 5).map(eb => ({
+                                            id: eb.id,
+                                            title: eb.title,
+                                            author: eb.author,
+                                            publisher: eb.publisher,
+                                            category: 'Sách điện tử',
+                                            type: 'ebook',
+                                            coverImage: eb.cover_url || `https://drive.google.com/thumbnail?id=${eb.drive_file_id}&sz=w400`,
+                                            views: eb.views,
+                                            likes: eb.favorites,
+                                            year: eb.publication_year,
+                                            grade: eb.grade
+                                        }))}
+                                        onBookClick={(b) => {
+                                            const eb = ebooks.find(e => e.id === b.id);
+                                            if (eb) nav.navigateToEBookDetail(eb);
+                                        }}
+                                        onViewAll={nav.navigateToEBookList}
+                                    />
+
+                                    {/* Mock Data Sections */}
+                                    <BookSection
+                                        title="Sách nói"
+                                        books={books.filter(b => b.category === 'Sách nói').slice(0, 5)}
+                                        onBookClick={handleBookClick}
+                                        onViewAll={() => nav.navigateToCategory('Sách nói')}
+                                    />
+
+                                    <BookSection
+                                        title="Bài giảng điện tử"
+                                        books={books.filter(b => b.category === 'Bài giảng điện tử').slice(0, 5)}
+                                        onBookClick={handleBookClick}
+                                        onViewAll={() => nav.navigateToCategory('Bài giảng điện tử')}
+                                    />
+
+                                    <BookSection
+                                        title="Video"
+                                        books={books.filter(b => b.category === 'Video').slice(0, 5)}
+                                        onBookClick={handleBookClick}
+                                        onViewAll={() => nav.navigateToCategory('Video')}
+                                    />
+
+                                    <BookSection
+                                        title="Báo, tạp chí"
+                                        books={books.filter(b => b.category === 'Báo, tạp chí').slice(0, 5)}
+                                        onBookClick={handleBookClick}
+                                        onViewAll={() => nav.navigateToCategory('Báo, tạp chí')}
+                                    />
+
+                                    <BookSection
+                                        title="Album ảnh"
+                                        books={books.filter(b => b.category === 'Album ảnh').slice(0, 5)}
+                                        onBookClick={handleBookClick}
+                                        onViewAll={() => nav.navigateToCategory('Album ảnh')}
+                                    />
                                 </div>
                             </>
                         )}

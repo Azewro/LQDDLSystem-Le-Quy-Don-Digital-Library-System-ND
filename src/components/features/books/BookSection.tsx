@@ -7,16 +7,22 @@ interface BookSectionProps {
   title: string;
   books: Book[];
   onBookClick: (book: Book) => void;
+  onViewAll?: () => void;
 }
 
-const BookSection: React.FC<BookSectionProps> = ({ title, books, onBookClick }) => {
+const BookSection: React.FC<BookSectionProps> = ({ title, books, onBookClick, onViewAll }) => {
   return (
     <section className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm mb-12">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-slate-800 font-black text-xl border-l-4 border-[#00a651] pl-4 uppercase tracking-tight">{title}</h2>
-        <a href="#" className="text-[#00a651] text-sm font-bold flex items-center gap-1 hover:underline">
-          Xem tất cả <ChevronRight className="w-4 h-4" />
-        </a>
+        {onViewAll && (
+          <button
+            onClick={onViewAll}
+            className="text-[#00a651] text-sm font-bold flex items-center gap-1 hover:underline"
+          >
+            Xem tất cả <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8">
