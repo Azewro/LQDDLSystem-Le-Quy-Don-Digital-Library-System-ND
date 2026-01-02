@@ -1,11 +1,10 @@
-
 .reader-container {
     perspective: 1500px;
     background: #f1f5f9;
 }
 
 .flip-book {
-    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
     margin: 0 auto;
     background: white;
 }
@@ -31,11 +30,12 @@
 .reader-footer {
     backdrop-filter: blur(12px);
     background: rgba(255, 255, 255, 0.9);
-    border-top: 1px solid rgba(0,0,0,0.05);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .page-slider {
     -webkit-appearance: none;
+    appearance: none;
     width: 100%;
     height: 4px;
     background: #e2e8f0;
@@ -52,13 +52,14 @@
     cursor: pointer;
     border-radius: 50%;
     border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .zoom-enter {
     opacity: 0;
     transform: scale(0.95);
 }
+
 .zoom-enter-active {
     opacity: 1;
     transform: scale(1);
@@ -70,13 +71,16 @@
     width: 6px;
     height: 6px;
 }
+
 .custom-reader-scrollbar::-webkit-scrollbar-track {
     background: transparent;
 }
+
 .custom-reader-scrollbar::-webkit-scrollbar-thumb {
     background: #e2e8f0;
     border-radius: 10px;
 }
+
 .custom-reader-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #cbd5e1;
 }

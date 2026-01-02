@@ -2,7 +2,7 @@
 
 interface ImportMetaEnv {
     readonly VITE_GOOGLE_DRIVE_API_KEY: string;
-    // more env variables...
+    readonly VITE_GEMINI_API_KEY: string;
 }
 
 interface ImportMeta {

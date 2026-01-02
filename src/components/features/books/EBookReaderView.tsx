@@ -12,7 +12,9 @@ import * as pdfjsLib from 'pdfjs-dist';
 import './EBookReader.css';
 
 // Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdfjs-dist/${pdfjsLib.version}/pdf.worker.min.js`;
+const PDF_WORKER_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
+console.log('PDF Worker URL initialized (Reader):', PDF_WORKER_URL);
 
 interface EBookReaderViewProps {
     book: EBook;
@@ -20,14 +22,16 @@ interface EBookReaderViewProps {
 }
 
 const EBookReaderView: React.FC<EBookReaderViewProps> = ({ book, onBack }) => {
+    const isPDF = book.storage_path ? book.storage_path.toLowerCase().endsWith('.pdf') : true;
+
     // Mode State: 'embed' (Iframe) or 'flipbook' (High Quality)
-    // Default to 'flipbook' if storage_path exists, else 'embed'
-    const [mode, setMode] = useState<'embed' | 'flipbook'>(book.storage_path ? 'flipbook' : 'embed');
+    // Default to 'flipbook' if storage_path exists and is PDF, else 'embed'
+    const [mode, setMode] = useState<'embed' | 'flipbook'>((book.storage_path && isPDF) ? 'flipbook' : 'embed');
 
     // PDF State
     const [numPages, setNumPages] = useState<number>(0);
     const [currentPage, setCurrentPage] = useState(0);
-    const [zoom, setZoom] = useState(1.0);
+    const [zoom, setZoom] = useState(1.8);
     const [pdf, setPdf] = useState<any>(null);
     const [renderedPages, setRenderedPages] = useState<Record<number, string>>({});
     const [loading, setLoading] = useState(false);
@@ -37,9 +41,18 @@ const EBookReaderView: React.FC<EBookReaderViewProps> = ({ book, onBack }) => {
     const flipBookRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // Get the actual file URL for reading
+    const getFileUrl = () => {
+        if (book.storage_path) {
+            const { data } = supabase.storage.from('ebooks').getPublicUrl(book.storage_path);
+            return data.publicUrl;
+        }
+        return `/drive-uc-proxy?export=download&id=${book.drive_file_id}`;
+    };
+
     // Initial Loading for Flipbook Mode
     useEffect(() => {
-        if (mode === 'flipbook') {
+        if (mode === 'flipbook' && isPDF) {
             loadPdf();
         }
     }, [mode]);
@@ -48,16 +61,7 @@ const EBookReaderView: React.FC<EBookReaderViewProps> = ({ book, onBack }) => {
         setLoading(true);
         setError(null);
         try {
-            let url = '';
-            // 1. Try Supabase Storage first
-            if (book.storage_path) {
-                const { data } = supabase.storage.from('ebooks').getPublicUrl(book.storage_path);
-                url = data.publicUrl;
-            } else {
-                // 2. Fallback to UC Proxy (more reliable for public PDFs)
-                url = `/drive-uc-proxy?export=download&id=${book.drive_file_id}`;
-            }
-
+            const url = getFileUrl();
             const loadingTask = pdfjsLib.getDocument(url);
             const loadedPdf = await loadingTask.promise;
             setPdf(loadedPdf);
@@ -162,10 +166,11 @@ const EBookReaderView: React.FC<EBookReaderViewProps> = ({ book, onBack }) => {
                             <Monitor className="w-3.5 h-3.5" /> Chế độ chuẩn
                         </button>
                         <button
-                            onClick={() => setMode('flipbook')}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all ${mode === 'flipbook' ? 'bg-[#00a651] text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+                            onClick={() => isPDF && setMode('flipbook')}
+                            disabled={!isPDF}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all ${mode === 'flipbook' ? 'bg-[#00a651] text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'} ${!isPDF ? 'opacity-30 cursor-not-allowed' : ''}`}
                         >
-                            <BookOpen className="w-3.5 h-3.5" /> Chế độ lật sách
+                            <BookOpen className="w-3.5 h-3.5" /> {isPDF ? 'Chế độ lật sách' : 'Lật sách (Chỉ PDF)'}
                         </button>
                     </div>
 
@@ -185,13 +190,15 @@ const EBookReaderView: React.FC<EBookReaderViewProps> = ({ book, onBack }) => {
             <div className="flex-1 relative bg-[#f1f5f9] overflow-hidden flex flex-col items-center justify-center">
                 {mode === 'embed' ? (
                     <iframe
-                        src={`https://drive.google.com/file/d/${book.drive_file_id}/preview`}
-                        className="w-full h-full border-none bg-white"
+                        src={book.storage_path
+                            ? `https://docs.google.com/viewer?url=${encodeURIComponent(getFileUrl())}&embedded=true`
+                            : `https://drive.google.com/file/d/${book.drive_file_id}/preview`}
+                        className="w-full h-full border-none bg-white font-['Inter']"
                         allow="autoplay text-rendering"
                         title={book.title}
                     ></iframe>
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center overflow-auto custom-reader-scrollbar relative py-12 px-20">
+                    <div className="w-full h-full flex items-center justify-center overflow-auto custom-reader-scrollbar relative p-0">
                         {loading && (
                             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm gap-4 transition-all">
                                 <Loader2 className="w-12 h-12 text-[#00a651] animate-spin" />
@@ -204,13 +211,13 @@ const EBookReaderView: React.FC<EBookReaderViewProps> = ({ book, onBack }) => {
 
                         <div style={{ transform: `scale(${zoom})`, transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
                             <HTMLFlipBook
-                                width={550}
-                                height={750}
+                                width={800}
+                                height={1100}
                                 size="stretch"
-                                minWidth={315}
-                                maxWidth={800}
-                                minHeight={420}
-                                maxHeight={1200}
+                                minWidth={400}
+                                maxWidth={1200}
+                                minHeight={600}
+                                maxHeight={1800}
                                 maxShadowOpacity={0.5}
                                 showCover={true}
                                 mobileScrollSupport={true}

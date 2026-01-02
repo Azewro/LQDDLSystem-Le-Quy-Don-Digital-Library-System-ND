@@ -450,7 +450,7 @@ const AdminArticleManagement: React.FC<AdminArticleManagementProps> = ({ type, i
                                 <img src={url} className="w-full h-full object-cover" alt="Gallery" />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                   <button onClick={() => setEditingItem({ ...editingItem, image_url: url })} className="p-2 bg-emerald-500 text-white rounded-lg shadow-lg hover:scale-110 transition-transform" title="Làm ảnh đại diện"><Layout className="w-4 h-4" /></button>
-                                  <button onClick={() => setTempGallery(prev => prev.filter((_, idx) => idx !== i))} className="p-2 bg-red-500 text-white rounded-lg shadow-lg hover:scale-110 transition-transform" title="Xóa ảnh"><Trash2 className="w-4 h-4" /></button>
+                                  <button onClick={() => { if (window.confirm("Xóa ảnh này khỏi kho ảnh tạm?")) setTempGallery(prev => prev.filter((_, idx) => idx !== i)); }} className="p-2 bg-red-500 text-white rounded-lg shadow-lg hover:scale-110 transition-transform" title="Xóa ảnh"><Trash2 className="w-4 h-4" /></button>
                                 </div>
                               </div>
                               <button

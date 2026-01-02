@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-export type BucketName = 'avatars' | 'articles';
+export type BucketName = 'avatars' | 'articles' | 'ebooks';
 
 /**
  * Upload file to Supabase Storage bucket
