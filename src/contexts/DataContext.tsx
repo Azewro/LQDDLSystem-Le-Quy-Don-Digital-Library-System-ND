@@ -25,10 +25,36 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const fetchData = useCallback(async () => {
         try {
-            const { data: newsData } = await supabase.from('news').select('*').order('created_at', { ascending: false });
-            const { data: introData } = await supabase.from('book_introductions').select('*').order('created_at', { ascending: false });
-            const { data: usersData } = await supabase.from('profiles').select('*');
-            const { data: pagesData } = await supabase.from('site_pages').select('*');
+            // Fetch users in batches because of Supabase 1000 limit
+            const fetchAllUsersList = async () => {
+                let all: any[] = [];
+                let from = 0;
+                const step = 1000;
+                while (true) {
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .range(from, from + step - 1);
+                    if (error) throw error;
+                    if (!data || data.length === 0) break;
+                    all = [...all, ...data];
+                    if (data.length < step) break;
+                    from += step;
+                }
+                return all;
+            };
+
+            const [
+                { data: newsData },
+                { data: introData },
+                usersData,
+                { data: pagesData }
+            ] = await Promise.all([
+                supabase.from('news').select('*').order('created_at', { ascending: false }),
+                supabase.from('book_introductions').select('*').order('created_at', { ascending: false }),
+                fetchAllUsersList(),
+                supabase.from('site_pages').select('*')
+            ]);
 
             if (newsData) setNews(newsData.map(n => ({
                 id: n.id,

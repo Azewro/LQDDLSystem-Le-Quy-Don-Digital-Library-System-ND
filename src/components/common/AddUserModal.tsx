@@ -27,8 +27,13 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ role, onClose, onRefresh, u
     dob: userToEdit?.dob || '',
     gender: userToEdit?.gender || 'Nam',
     cardCode: userToEdit?.card_code || '',
+    barcode: userToEdit?.barcode || '',
     phone: userToEdit?.phone || '',
+    issueDate: userToEdit?.issue_date || '',
+    effectiveDate: userToEdit?.effective_date || '',
     expiryDate: userToEdit?.expiry_date || '',
+    password: '', // New password if provided
+    isActive: userToEdit?.is_active ?? true,
     allowLibraryExport: false
   });
 
@@ -58,22 +63,40 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ role, onClose, onRefresh, u
 
       const username = userToEdit?.username || generateUsername(formData.cardCode, formData.fullName).toUpperCase();
 
+      // Bắt đầu với các trường bắt buộc
       const payload: any = {
         username: username,
         full_name: formData.fullName,
         role: role,
-        phone: formData.phone,
         card_code: formData.cardCode.toUpperCase(),
-        class_name: role === 'student' ? formData.classOrDept : null,
-        department: role !== 'student' ? formData.classOrDept : null,
-        dob: formData.dob,
-        gender: formData.gender,
-        expiry_date: formData.expiryDate || null,
-        avatar_url: avatarUrl || userToEdit?.avatar_url
+        is_active: formData.isActive
       };
 
-      // Only set password if creating new or if specifically needed (not typical for simple edit)
-      if (!userToEdit) {
+      // Xử lý các trường có thể null hoặc không đổi nếu để trống
+      if (role === 'student') {
+        payload.class_name = formData.classOrDept;
+        payload.department = null;
+      } else {
+        payload.department = formData.classOrDept;
+        payload.class_name = null;
+      }
+
+      // Chỉ cập nhật nếu có giá trị (tránh ghi đè null khi người dùng không nhập)
+      if (formData.dob) payload.dob = formData.dob;
+      if (formData.gender) payload.gender = formData.gender;
+      if (formData.phone) payload.phone = formData.phone;
+      if (formData.barcode) payload.barcode = formData.barcode;
+      if (formData.issueDate) payload.issue_date = formData.issueDate;
+      if (formData.effectiveDate) payload.effective_date = formData.effectiveDate;
+      if (formData.expiryDate) payload.expiry_date = formData.expiryDate;
+      if (avatarUrl) payload.avatar_url = avatarUrl;
+
+      // Xử lý mật khẩu
+      if (formData.password) {
+        payload.password = await hashPassword(formData.password);
+        payload.must_change_password = true;
+      } else if (!userToEdit) {
+        // Chỉ đặt mật khẩu mặc định khi TẠO MỚI
         const defaultPass = formData.dob || '123456';
         payload.password = await hashPassword(defaultPass);
         payload.must_change_password = true;
@@ -81,14 +104,14 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ role, onClose, onRefresh, u
 
       const { error: insertError } = await supabase
         .from('profiles')
-        .upsert([payload], { onConflict: 'username' });
+        .upsert(payload, { onConflict: 'username' });
 
       if (insertError) throw insertError;
 
       if (onRefresh) onRefresh();
       onClose();
     } catch (err: any) {
-      setError("Lỗi khi tạo tài khoản: " + (err.message || "Tên đăng nhập hoặc mã thẻ đã tồn tại"));
+      setError("Lỗi khi lưu tài khoản: " + (err.message || "Tên đăng nhập hoặc mã thẻ đã tồn tại"));
     } finally {
       setLoading(false);
     }
@@ -100,7 +123,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ role, onClose, onRefresh, u
 
         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white">
           <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">
-            Thêm mới {role === 'student' ? 'Học sinh' : role === 'teacher' ? 'Giáo viên' : 'Quản trị viên'}
+            {userToEdit ? 'Sửa' : 'Thêm mới'} {role === 'student' ? 'Học sinh' : role === 'teacher' ? 'Giáo viên' : 'Quản trị viên'}
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-colors text-slate-400">
             <X className="w-5 h-5" />
@@ -116,10 +139,10 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ role, onClose, onRefresh, u
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-white">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
 
-            <div className="md:col-span-3">
+            <div className="md:col-span-3 flex flex-col items-center">
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="aspect-[3/4] bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center text-center p-6 group hover:border-[#00a651] transition-colors cursor-pointer overflow-hidden relative"
+                className="w-full aspect-[3/4] bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center text-center group hover:border-[#00a651] transition-colors cursor-pointer overflow-hidden relative mb-4"
               >
                 <input
                   ref={fileInputRef}
@@ -128,22 +151,27 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ role, onClose, onRefresh, u
                   onChange={handleAvatarChange}
                   className="hidden"
                 />
-                {avatarPreview ? (
-                  <img src={avatarPreview} alt="Avatar preview" className="absolute inset-0 w-full h-full object-cover" />
+                {(avatarPreview || userToEdit?.avatar_url) ? (
+                  <img src={avatarPreview || userToEdit?.avatar_url} alt="Avatar preview" className="absolute inset-0 w-full h-full object-cover" />
                 ) : (
                   <>
                     <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4">
                       <Camera className="w-8 h-8 text-slate-300 group-hover:text-[#00a651]" />
                     </div>
-                    <p className="text-[#00a651] text-[11px] font-black uppercase tracking-widest">Tải ảnh thẻ</p>
                   </>
                 )}
               </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="text-[#00a651] text-[13px] font-bold hover:underline"
+              >
+                Chọn ảnh
+              </button>
             </div>
 
             <div className="md:col-span-9 space-y-10 text-slate-900">
               <section className="space-y-6">
-                <h3 className="text-[15px] font-black text-slate-800 border-l-4 border-emerald-500 pl-3 uppercase">Thông tin định danh</h3>
+                <h3 className="text-[15px] font-black text-slate-800 border-l-4 border-emerald-500 pl-3 uppercase">Thông tin bạn đọc</h3>
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-500 uppercase">Họ và tên <span className="text-red-500">*</span></label>
@@ -152,102 +180,166 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ role, onClose, onRefresh, u
                       value={formData.fullName}
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       placeholder="Nhập họ tên đầy đủ"
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-900 font-medium"
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-800 font-medium"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-500 uppercase">{role === 'student' ? 'Lớp học' : role === 'teacher' ? 'Phòng ban' : 'Bộ phận/Chức vụ'} <span className="text-red-500">*</span></label>
+                    <label className="text-[11px] font-bold text-slate-500 uppercase">{role === 'student' ? 'Lớp' : role === 'teacher' ? 'Phòng ban' : 'Bộ phận/Chức vụ'} <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       value={formData.classOrDept}
                       onChange={(e) => setFormData({ ...formData, classOrDept: e.target.value })}
                       placeholder={role === 'student' ? "7A1" : role === 'teacher' ? "Ban Giám Hiệu" : "Phòng Công Nghệ"}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-900 font-medium"
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-800 font-medium"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-500 uppercase">Ngày sinh (dd/mm/yyyy)</label>
+                    <label className="text-[11px] font-bold text-slate-500 uppercase">Ngày sinh</label>
                     <div className="relative">
                       <input
                         type="text"
                         value={formData.dob}
                         onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                        placeholder="VD: 15/05/2010"
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-900 font-medium"
+                        placeholder="dd/mm/yyyy"
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-800 font-medium"
                       />
                       <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#00a651]" />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-500 uppercase">Giới tính</label>
-                    <select
-                      value={formData.gender}
-                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-900 font-medium appearance-none"
-                    >
-                      <option>Nam</option><option>Nữ</option><option>Khác</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={formData.gender}
+                        onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-800 font-medium appearance-none"
+                      >
+                        <option>Nam</option><option>Nữ</option><option>Khác</option>
+                      </select>
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
                   </div>
                 </div>
               </section>
 
               <section className="space-y-6">
-                <h3 className="text-[15px] font-black text-slate-800 border-l-4 border-emerald-500 pl-3 uppercase">Quản lý thẻ & Tài khoản</h3>
+                <h3 className="text-[15px] font-black text-slate-800 border-l-4 border-emerald-500 pl-3 uppercase">Thông tin thẻ</h3>
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-500 uppercase">Mã số thẻ <span className="text-red-500">*</span></label>
-                    <div className="relative">
-                      <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input
-                        type="text"
-                        value={formData.cardCode}
-                        onChange={(e) => setFormData({ ...formData, cardCode: e.target.value })}
-                        placeholder="VD: HS0491"
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-[#00a651]"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-500 uppercase">Số điện thoại</label>
-                    <div className="relative">
-                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input
-                        type="text"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 font-medium"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-500 uppercase">Ngày hết hạn thẻ</label>
+                    <label className="text-[11px] font-bold text-slate-500 uppercase">Mã thẻ <span className="text-red-500">*</span></label>
                     <input
                       type="text"
-                      value={formData.expiryDate}
-                      onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 font-medium"
+                      value={formData.cardCode}
+                      onChange={(e) => setFormData({ ...formData, cardCode: e.target.value })}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-800 font-medium"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase">Ngày cấp</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={formData.issueDate}
+                        onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })}
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-800 font-medium"
+                      />
+                      <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#00a651]" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase">Ngày hiệu lực</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={formData.effectiveDate}
+                        onChange={(e) => setFormData({ ...formData, effectiveDate: e.target.value })}
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-800 font-medium"
+                      />
+                      <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#00a651]" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase">Ngày hết hạn</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={formData.expiryDate}
+                        onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-800 font-medium"
+                      />
+                      <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#00a651]" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase">Mã vạch</label>
+                    <input
+                      type="text"
+                      value={formData.barcode}
+                      onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-800 font-medium"
                     />
                   </div>
                 </div>
               </section>
+
+              <section className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[15px] font-black text-slate-800 border-l-4 border-emerald-500 pl-3 uppercase">Thông tin tài khoản</h3>
+                  <Info className="w-4 h-4 text-sky-400" />
+                </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase">Số điện thoại</label>
+                    <input
+                      type="text"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-800 font-medium"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase">Mật khẩu</label>
+                    <input
+                      type="password"
+                      value={formData.password}
+                      autoComplete="new-password"
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      placeholder={userToEdit ? "Để trống nếu không đổi" : "Mặc định là ngày sinh"}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00a651] text-sm text-slate-800 font-medium"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <div className="flex items-center gap-4 py-4">
+                <button
+                  onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
+                  className="flex items-center gap-3 group"
+                >
+                  <div className={`w-12 h-6 rounded-full relative transition-colors ${formData.isActive ? 'bg-[#00a651]' : 'bg-slate-200'}`}>
+                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${formData.isActive ? 'left-7' : 'left-1'}`} />
+                  </div>
+                  <span className="text-sm font-bold text-slate-600">Đang theo dõi</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+        <div className="p-6 bg-white border-t border-slate-100 flex items-center justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-8 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-md hover:bg-slate-50 font-bold text-sm"
+            className="px-10 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 font-black text-xs uppercase tracking-widest transition-all"
           >
-            Hủy bỏ
+            Đóng
           </button>
           <button
             onClick={handleSave}
             disabled={loading}
-            className="px-8 py-2.5 bg-[#00a651] text-white rounded-md hover:bg-emerald-700 font-bold text-sm shadow-sm flex items-center gap-2"
+            className="px-10 py-2.5 bg-[#00a651] text-white rounded-xl hover:bg-emerald-600 font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all disabled:opacity-50"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            LƯU BẠN ĐỌC
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            Lưu
           </button>
         </div>
       </div>

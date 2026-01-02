@@ -147,12 +147,25 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onRefr
       return;
     }
 
+    setImporting(true);
+    setImportProgress({ total: idsToDelete.length, current: 0 });
+
     try {
-      const { error } = await supabase.from('profiles').delete().in('id', idsToDelete);
-      if (error) throw error;
+      const BATCH_SIZE = 100;
+      for (let i = 0; i < idsToDelete.length; i += BATCH_SIZE) {
+        const batch = idsToDelete.slice(i, i + BATCH_SIZE);
+        const { error } = await supabase.from('profiles').delete().in('id', batch);
+        if (error) throw error;
+        setImportProgress(prev => ({ ...prev, current: Math.min(i + BATCH_SIZE, idsToDelete.length) }));
+      }
       setSelectedIds(new Set());
       onRefresh?.();
-    } catch (err: any) { alert(err.message); }
+      alert("Đã xóa thành công!");
+    } catch (err: any) { alert("Lỗi khi xóa: " + err.message); }
+    finally {
+      setImporting(false);
+      setImportProgress({ total: 0, current: 0 });
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -250,15 +263,30 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onRefr
 
   const handleResetPasswords = async () => {
     if (selectedIds.size === 0) return;
+    if (!window.confirm(`Đặt lại mật khẩu cho ${selectedIds.size} bạn đọc đã chọn?`)) return;
+
+    const idsToReset = Array.from(selectedIds);
     setImporting(true);
+    setImportProgress({ total: idsToReset.length, current: 0 });
+
     try {
-      for (const id of Array.from(selectedIds)) {
-        const u = users.find(user => user.id === id);
-        const hashed = await hashPassword(u?.dob || '123456');
-        await supabase.from('profiles').update({ password: hashed, must_change_password: true }).eq('id', id);
+      const BATCH_SIZE = 20; // Parallel batches
+      for (let i = 0; i < idsToReset.length; i += BATCH_SIZE) {
+        const batch = idsToReset.slice(i, i + BATCH_SIZE);
+        await Promise.all(batch.map(async (id) => {
+          const u = users.find(user => user.id === id);
+          const hashed = await hashPassword(u?.dob || '123456');
+          const { error } = await supabase.from('profiles').update({ password: hashed, must_change_password: true }).eq('id', id);
+          if (error) throw error;
+        }));
+        setImportProgress(prev => ({ ...prev, current: Math.min(i + BATCH_SIZE, idsToReset.length) }));
       }
-      alert("Đã reset mật khẩu");
-    } catch (err: any) { alert(err.message); } finally { setImporting(false); }
+      alert("Đã reset mật khẩu thành công!");
+    } catch (err: any) { alert("Lỗi khi đặt lại mật khẩu: " + err.message); }
+    finally {
+      setImporting(false);
+      setImportProgress({ total: 0, current: 0 });
+    }
   };
 
   const toggleFullscreen = () => {
