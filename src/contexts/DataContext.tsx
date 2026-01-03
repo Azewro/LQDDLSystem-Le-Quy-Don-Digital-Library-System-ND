@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { User, Book, NewsItem, BookIntroduction, StaticPage, EBook, EBookFolder } from '@/types';
+import { User, Book, NewsItem, BookIntroduction, StaticPage, EBook, EBookFolder, Audiobook, AudiobookFolder } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { BOOKS as MOCK_BOOKS } from '@/data/mockData';
 
@@ -11,6 +11,8 @@ interface DataContextType {
     sitePages: StaticPage[];
     ebooks: EBook[];
     ebookFolders: EBookFolder[];
+    audiobooks: Audiobook[];
+    audiobookFolders: AudiobookFolder[];
     loading: boolean;
     fetchData: () => Promise<void>;
 }
@@ -25,6 +27,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [sitePages, setSitePages] = useState<StaticPage[]>([]);
     const [ebooks, setEbooks] = useState<EBook[]>([]);
     const [ebookFolders, setEbookFolders] = useState<EBookFolder[]>([]);
+    const [audiobooks, setAudiobooks] = useState<Audiobook[]>([]);
+    const [audiobookFolders, setAudiobookFolders] = useState<AudiobookFolder[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchData = useCallback(async () => {
@@ -54,14 +58,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 usersData,
                 { data: pagesData },
                 { data: ebooksData },
-                { data: foldersData }
+                { data: foldersData },
+                { data: audiobooksData },
+                { data: audiobookFoldersData }
             ] = await Promise.all([
                 supabase.from('news').select('*').order('created_at', { ascending: false }),
                 supabase.from('book_introductions').select('*').order('created_at', { ascending: false }),
                 fetchAllUsersList(),
                 supabase.from('site_pages').select('*'),
                 supabase.from('ebooks').select('*').order('created_at', { ascending: false }),
-                supabase.from('ebook_folders').select('*').order('display_order', { ascending: true })
+                supabase.from('ebook_folders').select('*').order('display_order', { ascending: true }),
+                supabase.from('audiobooks').select('*').order('created_at', { ascending: false }),
+                supabase.from('audiobook_folders').select('*').order('display_order', { ascending: true })
             ]);
 
             if (newsData) setNews(newsData.map(n => ({
@@ -115,6 +123,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             })));
             if (ebooksData) setEbooks(ebooksData);
             if (foldersData) setEbookFolders(foldersData);
+            if (audiobooksData) setAudiobooks(audiobooksData);
+            if (audiobookFoldersData) setAudiobookFolders(audiobookFoldersData);
         } catch (error) {
             console.error(error);
         } finally {
@@ -123,7 +133,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     return (
-        <DataContext.Provider value={{ books, news, intros, allUsers, sitePages, ebooks, ebookFolders, loading, fetchData }}>
+        <DataContext.Provider value={{
+            books, news, intros, allUsers, sitePages, ebooks, ebookFolders,
+            audiobooks, audiobookFolders, loading, fetchData
+        }}>
             {children}
         </DataContext.Provider>
     );

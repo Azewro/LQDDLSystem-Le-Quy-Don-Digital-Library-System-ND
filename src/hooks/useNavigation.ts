@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
-import { BookIntroduction, NewsItem, StaticPage, EBook } from '@/types';
+import { BookIntroduction, NewsItem, StaticPage, EBook, Audiobook } from '@/types';
 import { supabase } from '@/lib/supabase';
 
-export type ViewState = 'home' | 'intro-list' | 'intro-detail' | 'news-list' | 'news-detail' | 'doc-overview' | 'doc-category' | 'static-page' | 'admin' | 'ebook-list' | 'ebook-detail' | 'ebook-reader';
-export type AdminSubView = 'dashboard' | 'users' | 'books' | 'admin-news' | 'admin-introductions' | 'settings' | 'admin-pages' | 'admin-ebooks';
+export type ViewState = 'home' | 'intro-list' | 'intro-detail' | 'news-list' | 'news-detail' | 'doc-overview' | 'doc-category' | 'static-page' | 'admin' | 'ebook-list' | 'ebook-detail' | 'ebook-reader' | 'audiobook-list' | 'audiobook-detail';
+export type AdminSubView = 'dashboard' | 'users' | 'books' | 'admin-news' | 'admin-introductions' | 'settings' | 'admin-pages' | 'admin-ebooks' | 'admin-audiobooks';
 
 export const useNavigation = () => {
     const [currentView, setCurrentView] = useState<ViewState>('home');
@@ -13,6 +13,7 @@ export const useNavigation = () => {
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [activeStaticPage, setActiveStaticPage] = useState<StaticPage | null>(null);
     const [selectedEBook, setSelectedEBook] = useState<EBook | null>(null);
+    const [selectedAudiobook, setSelectedAudiobook] = useState<Audiobook | null>(null);
     const [isAdminSidebarCollapsed, setIsAdminSidebarCollapsed] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -49,8 +50,14 @@ export const useNavigation = () => {
     }, []);
 
     const navigateToCategory = useCallback((cat: string) => {
-        setSelectedCategory(cat);
-        setCurrentView('doc-category');
+        if (cat === 'Sách điện tử') {
+            setCurrentView('ebook-list');
+        } else if (cat === 'Sách nói') {
+            setCurrentView('audiobook-list');
+        } else {
+            setSelectedCategory(cat);
+            setCurrentView('doc-category');
+        }
         window.scrollTo(0, 0);
     }, []);
 
@@ -93,6 +100,17 @@ export const useNavigation = () => {
         window.scrollTo(0, 0);
     }, []);
 
+    const navigateToAudiobookList = useCallback(() => {
+        setCurrentView('audiobook-list');
+        window.scrollTo(0, 0);
+    }, []);
+
+    const navigateToAudiobookDetail = useCallback((book: Audiobook) => {
+        setSelectedAudiobook(book);
+        setCurrentView('audiobook-detail');
+        window.scrollTo(0, 0);
+    }, []);
+
     return {
         currentView,
         setCurrentView,
@@ -103,6 +121,7 @@ export const useNavigation = () => {
         selectedCategory,
         activeStaticPage,
         selectedEBook,
+        selectedAudiobook,
         isAdminSidebarCollapsed,
         loading,
         navigateToHome,
@@ -117,6 +136,8 @@ export const useNavigation = () => {
         toggleAdminSidebar,
         navigateToEBookList,
         navigateToEBookDetail,
-        navigateToEBookReader
+        navigateToEBookReader,
+        navigateToAudiobookList,
+        navigateToAudiobookDetail
     };
 };

@@ -11,6 +11,7 @@ import AdminSidebar from '@/components/layout/AdminSidebar';
 import AdminFooter from '@/components/layout/AdminFooter';
 
 // Common components
+import AudioPlayer from '@/components/shared/AudioPlayer';
 import LoginModal from '@/components/common/LoginModal';
 import UserProfileModal from '@/components/common/UserProfileModal';
 
@@ -26,6 +27,8 @@ import CategoryDetailView from '@/components/features/books/CategoryDetailView';
 import EBookListView from '@/components/features/books/EBookListView';
 import EBookDetailView from '@/components/features/books/EBookDetailView';
 import EBookReaderView from '@/components/features/books/EBookReaderView';
+import AudiobookListView from '@/components/features/audiobooks/AudiobookListView';
+import AudiobookDetailView from '@/components/features/audiobooks/AudiobookDetailView';
 
 // Feature components - News
 import NewsList from '@/components/features/news/NewsList';
@@ -44,14 +47,22 @@ import AdminUserManagement from '@/components/features/admin/AdminUserManagement
 import AdminArticleManagement from '@/components/features/admin/AdminArticleManagement';
 import AdminPageManagement from '@/components/features/admin/AdminPageManagement';
 import AdminEBookManagement from '@/components/features/admin/AdminEBookManagement';
+import AdminAudiobookManagement from '@/components/features/admin/AdminAudiobookManagement';
 
-import { Book } from '@/types';
+import { User, Book, NewsItem, BookIntroduction, StaticPage, EBook, AudioTrack } from '@/types';
 import { Loader2, Settings } from 'lucide-react';
 
 const AppContent: React.FC = () => {
     const { user, setUser, showLogin, setShowLogin, showProfile, setShowProfile, mustChangePassword, handleLoginSuccess, handleLogout } = useAuth();
-    const { books, news, intros, allUsers, sitePages, ebooks, ebookFolders, loading, fetchData } = useData();
+    const {
+        books, news, intros, allUsers, sitePages, ebooks, ebookFolders,
+        audiobooks, audiobookFolders, loading, fetchData
+    } = useData();
     const nav = useNavigation();
+
+    // Audio Player State
+    const [currentAudioTrack, setCurrentAudioTrack] = React.useState<AudioTrack | null>(null);
+    const [audioPlaylist, setAudioPlaylist] = React.useState<AudioTrack[]>([]);
 
     useEffect(() => {
         fetchData();
@@ -71,12 +82,84 @@ const AppContent: React.FC = () => {
         }
     }, [allUsers, user, setUser]);
 
-    const handleBookClick = (book: Book) => {
+    const handlePlayTrack = (track: AudioTrack, playlist: AudioTrack[]) => {
         if (!user) {
             setShowLogin(true);
             return;
         }
-        window.alert(`Đang mượn tài liệu: ${book.title}`);
+        setCurrentAudioTrack(track);
+        setAudioPlaylist(playlist);
+    };
+
+    const handleNextTrack = () => {
+        if (!currentAudioTrack || audioPlaylist.length <= 1) return;
+        const currentIndex = audioPlaylist.findIndex(t => t.id === currentAudioTrack.id);
+        if (currentIndex < audioPlaylist.length - 1) {
+            setCurrentAudioTrack(audioPlaylist[currentIndex + 1]);
+        }
+    };
+
+    const handlePrevTrack = () => {
+        if (!currentAudioTrack || audioPlaylist.length <= 1) return;
+        const currentIndex = audioPlaylist.findIndex(t => t.id === currentAudioTrack.id);
+        if (currentIndex > 0) {
+            setCurrentAudioTrack(audioPlaylist[currentIndex - 1]);
+        }
+    };
+
+    const combinedBooks = React.useMemo(() => {
+        const mappedEBooks = ebooks.map(eb => ({
+            id: eb.id,
+            title: eb.title,
+            author: eb.author,
+            publisher: eb.publisher,
+            category: 'Sách điện tử',
+            type: 'ebook',
+            coverImage: eb.cover_url || `https://drive.google.com/thumbnail?id=${eb.drive_file_id}&sz=w400`,
+            views: eb.views,
+            likes: eb.favorites,
+            year: eb.publication_year,
+            grade: eb.grade
+        }));
+
+        const mappedAudiobooks = audiobooks.map(ab => ({
+            id: ab.id,
+            title: ab.title,
+            author: ab.author,
+            publisher: ab.publisher,
+            category: 'Sách nói',
+            type: 'audio',
+            coverImage: ab.cover_url || '/images/default-audio-cover.png',
+            views: ab.views,
+            likes: ab.favorites,
+            year: ab.publication_year,
+            grade: ab.grade
+        }));
+
+        const otherBooks = books.filter(b => b.category !== 'Sách điện tử' && b.category !== 'Sách nói');
+
+        return [...mappedEBooks, ...mappedAudiobooks, ...otherBooks];
+    }, [books, ebooks, audiobooks]);
+
+    const handleBookClick = (book: any) => {
+        if (!user) {
+            setShowLogin(true);
+            return;
+        }
+
+        if (book.type === 'ebook') {
+            const eb = ebooks.find(e => e.id === book.id);
+            if (eb) nav.navigateToEBookDetail(eb);
+            return;
+        }
+
+        if (book.type === 'audio') {
+            const ab = audiobooks.find(a => a.id === book.id);
+            if (ab) nav.navigateToAudiobookDetail(ab);
+            return;
+        }
+
+        window.alert(`Đọc tài liệu: ${book.title}`);
     };
 
     const isAdminView = nav.currentView === 'admin' && user?.role === 'admin';
@@ -117,6 +200,7 @@ const AppContent: React.FC = () => {
                                 {nav.adminSubView === 'admin-news' && <AdminArticleManagement type="news" items={news} onRefresh={fetchData} />}
                                 {nav.adminSubView === 'admin-pages' && <AdminPageManagement pages={sitePages} onRefresh={fetchData} />}
                                 {nav.adminSubView === 'admin-ebooks' && <AdminEBookManagement ebooks={ebooks} folders={ebookFolders} onRefresh={fetchData} />}
+                                {nav.adminSubView === 'admin-audiobooks' && <AdminAudiobookManagement audiobooks={audiobooks} folders={audiobookFolders} onRefresh={fetchData} />}
                                 {nav.adminSubView === 'books' && <div className="p-20 text-center opacity-30 font-black italic">QUẢN LÝ KHO TÀI LIỆU (ĐANG PHÁT TRIỂN)</div>}
                                 {nav.adminSubView === 'settings' && <div className="p-20 text-center opacity-30 font-black italic">CẤU HÌNH HỆ THỐNG (ĐANG PHÁT TRIỂN)</div>}
                             </main>
@@ -206,12 +290,27 @@ const AppContent: React.FC = () => {
                                         onViewAll={nav.navigateToEBookList}
                                     />
 
-                                    {/* Mock Data Sections */}
+                                    {/* Real Data Section: Sách nói */}
                                     <BookSection
-                                        title="Sách nói"
-                                        books={books.filter(b => b.category === 'Sách nói').slice(0, 5)}
-                                        onBookClick={handleBookClick}
-                                        onViewAll={() => nav.navigateToCategory('Sách nói')}
+                                        title="Sách nói mới"
+                                        books={audiobooks.slice(0, 5).map(ab => ({
+                                            id: ab.id,
+                                            title: ab.title,
+                                            author: ab.author,
+                                            publisher: ab.publisher,
+                                            category: 'Sách nói',
+                                            type: 'audio',
+                                            coverImage: ab.cover_url || '/images/default-audio-cover.png',
+                                            views: ab.views,
+                                            likes: ab.favorites,
+                                            year: ab.publication_year,
+                                            grade: ab.grade
+                                        }))}
+                                        onBookClick={(b) => {
+                                            const ab = audiobooks.find(a => a.id === b.id);
+                                            if (ab) nav.navigateToAudiobookDetail(ab);
+                                        }}
+                                        onViewAll={nav.navigateToAudiobookList}
                                     />
 
                                     <BookSection
@@ -245,8 +344,8 @@ const AppContent: React.FC = () => {
                             </>
                         )}
                         {nav.currentView === 'static-page' && nav.activeStaticPage && <StaticPageView page={nav.activeStaticPage} onBack={nav.navigateToHome} />}
-                        {nav.currentView === 'doc-overview' && <DocumentOverview books={books} onBookClick={handleBookClick} onNavigateCategory={nav.navigateToCategory} />}
-                        {nav.currentView === 'doc-category' && <CategoryDetailView category={nav.selectedCategory} books={books} onBookClick={handleBookClick} onNavigateHome={nav.navigateToHome} onNavigateOverview={nav.navigateToDocOverview} />}
+                        {nav.currentView === 'doc-overview' && <DocumentOverview books={combinedBooks as any} onBookClick={handleBookClick} onNavigateCategory={nav.navigateToCategory} />}
+                        {nav.currentView === 'doc-category' && <CategoryDetailView category={nav.selectedCategory} books={combinedBooks as any} onBookClick={handleBookClick} onNavigateHome={nav.navigateToHome} onNavigateOverview={nav.navigateToDocOverview} />}
                         {nav.currentView === 'intro-list' && <IntroList introductions={intros} onSelectIntro={nav.navigateToIntroDetail} onBack={nav.navigateToHome} />}
                         {nav.currentView === 'intro-detail' && nav.selectedIntro && <IntroDetail intro={nav.selectedIntro} allIntros={intros} onNavigateDetail={nav.navigateToIntroDetail} onNavigateList={nav.navigateToIntroList} onNavigateHome={nav.navigateToHome} />}
                         {nav.currentView === 'news-list' && <NewsList newsList={news} onSelectNews={nav.navigateToNewsDetail} onBack={nav.navigateToHome} />}
@@ -254,8 +353,18 @@ const AppContent: React.FC = () => {
                         {nav.currentView === 'ebook-list' && <EBookListView ebooks={ebooks} folders={ebookFolders} onBookClick={nav.navigateToEBookDetail} onNavigateHome={nav.navigateToHome} onNavigateOverview={nav.navigateToDocOverview} />}
                         {nav.currentView === 'ebook-detail' && nav.selectedEBook && <EBookDetailView book={nav.selectedEBook} onBack={nav.navigateToEBookList} onRead={nav.navigateToEBookReader} />}
                         {nav.currentView === 'ebook-reader' && nav.selectedEBook && <EBookReaderView book={nav.selectedEBook} onBack={() => nav.navigateToEBookDetail(nav.selectedEBook!)} />}
+                        {nav.currentView === 'audiobook-list' && <AudiobookListView audiobooks={audiobooks} folders={audiobookFolders} onBookClick={nav.navigateToAudiobookDetail} onNavigateHome={nav.navigateToHome} onNavigateOverview={nav.navigateToDocOverview} />}
+                        {nav.currentView === 'audiobook-detail' && nav.selectedAudiobook && <AudiobookDetailView audiobook={nav.selectedAudiobook} onBack={nav.navigateToAudiobookList} onPlayTrack={handlePlayTrack} currentTrackId={currentAudioTrack?.id} />}
                     </main>
                     <Footer onNavigateHome={nav.navigateToHome} onNavigateIntro={nav.navigateToIntroList} onNavigateNews={nav.navigateToNewsList} onEBookClick={nav.navigateToEBookList} />
+                    <AudioPlayer
+                        currentTrack={currentAudioTrack}
+                        playlist={audioPlaylist}
+                        onClose={() => setCurrentAudioTrack(null)}
+                        onNext={handleNextTrack}
+                        onPrevious={handlePrevTrack}
+                        onTrackSelect={(t) => setCurrentAudioTrack(t)}
+                    />
                 </>
             )}
 

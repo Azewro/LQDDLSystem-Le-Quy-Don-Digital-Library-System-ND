@@ -110,3 +110,39 @@ export interface EBook {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface AudiobookFolder {
+  id: string;
+  name: string;
+  parent_id?: string;
+  display_order: number;
+  created_at?: string;
+}
+
+export interface Audiobook {
+  id: string;
+  title: string;
+  author?: string;
+  publisher?: string;
+  publication_year?: number;
+  cover_url?: string;
+  description?: string;
+  grade: string;
+  folder_id?: string;
+  views: number;
+  favorites: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AudioTrack {
+  id: string;
+  audiobook_id: string;
+  title: string;
+  drive_file_id?: string;
+  storage_path?: string;
+  file_url?: string;
+  duration?: string;
+  display_order: number;
+  created_at?: string;
+}

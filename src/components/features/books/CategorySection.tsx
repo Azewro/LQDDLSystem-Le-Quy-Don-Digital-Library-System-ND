@@ -14,7 +14,6 @@ const categories = [
 
 interface CategorySectionProps {
   onCategoryClick?: (cat: string) => void;
-  onEBookClick?: () => void;
 }
 
 const CategorySection: React.FC<CategorySectionProps> = ({ onCategoryClick, onEBookClick }) => {
@@ -31,11 +30,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({ onCategoryClick, onEB
   };
 
   const handleCategoryClick = (cat: typeof categories[0]) => {
-    if (cat.isEBook && onEBookClick) {
-      onEBookClick();
-    } else {
-      onCategoryClick?.(cat.label);
-    }
+    onCategoryClick?.(cat.label);
   };
 
   return (
