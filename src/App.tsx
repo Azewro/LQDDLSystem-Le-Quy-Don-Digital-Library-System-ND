@@ -14,6 +14,7 @@ import AdminFooter from '@/components/layout/AdminFooter';
 import AudioPlayer from '@/components/shared/AudioPlayer';
 import LoginModal from '@/components/common/LoginModal';
 import UserProfileModal from '@/components/common/UserProfileModal';
+import SpeedInsights from '@/components/shared/SpeedInsights';
 
 // Feature components - Home
 import BannerSlider from '@/components/features/home/BannerSlider';
@@ -400,6 +401,7 @@ const App: React.FC = () => {
     return (
         <AuthProvider>
             <DataProvider>
+                <SpeedInsights />
                 <AppContent />
             </DataProvider>
         </AuthProvider>
